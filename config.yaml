@@ -1,0 +1,61 @@
+seed: 42
+
+runtime:
+  max_requests_per_scenario: 20000
+
+experiment:
+  days: 30
+  D_docs: 5000
+  months: 12
+  companies: 3
+  top_k: 5
+  questions: 300
+
+scenarios:
+  U_monthly: [0.01, 0.05, 0.20]
+  lambda_per_day: [100, 1000, 10000]
+
+#политика переобучения FT
+fine_tuning_policy:
+  retrain_every_days: 7
+  train_cost_per_run: 12.0     #условная стоимость одного retrain (в валюте pricing.currency)
+
+#обновление базы знаний (RAG)
+rag_policy:
+  index_update_cost_per_1pct: 0.40 #условная стоимость обновления индекса/эмбеддингов при событии обновления
+
+#тарифная модель "API" (мы не вызываем API, но считаем стоимость по токенам)
+pricing:
+  currency: "USD"
+  llm_input_per_1k: 0.00015
+  llm_output_per_1k: 0.00060
+
+assumptions:
+  retr_cost_per_query: 0.00001  #условная retrieval-стоимость
+  tokens_per_char_ru: 0.25      #приближение: токены ~ chars * 0.25 (≈ 1 токен на 4 символа)
+  system_prompt: "Ты помощник корпоративного аналитика. Отвечай строго и кратко, только по данным."
+  #чтобы RAG выглядел реалистично: добавляем служебные строки разметки контекста
+  rag_context_overhead_chars: 120
+
+#Параметры имитации задержек (ms)
+latency_model:
+  base_ms: 180
+  per_token_ms: 1.6
+  rag_extra_ms: 60
+  jitter_ms: 80
+
+#Параметры имитации качества (вероятностная модель)
+quality_model:
+  #базовый уровень (до учета сложности/устаревания/попадания retrieval)
+  base_rag: 0.90
+  base_ft: 0.89
+  #влияние сложности вопроса (0..1)
+  diff_penalty_rag: 0.22
+  diff_penalty_ft: 0.26
+  #бонус если retrieval hit=True
+  rag_hit_bonus: 0.08
+  # штраф FT за устаревание знаний
+  ft_stale_penalty: 0.45
+  #нижняя/верхняя границы
+  clamp_min: 0.02
+  clamp_max: 0.98
